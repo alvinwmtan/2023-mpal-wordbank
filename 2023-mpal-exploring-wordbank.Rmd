@@ -34,32 +34,33 @@ This consistency allows us to adopt a uniform approach to handling the data, and
 
 ## Data wrangling
 Once we have tidy data, we can manipulate them using some of the functions in the `tidyverse`.
-Just to illustrate some of these functions (or "verbs"), we will use the `diamonds` dataset from `tidyverse`, which contains the details and prices of over 50,000 diamonds.
+To illustrate some of these functions (or "verbs"), we will use an old version of the English (American) Words & Sentnces dataset from Wordbank.
+We can take a peek at what's in the data by using the `head` function. 
 ```{r}
-df <- diamonds
-head(df)
+admins_eng_ws <- read_csv("https://github.com/alvinwmtan/2023-mpal-wordbank/raw/master/eng_ws_data.csv")
+head(admins_eng_ws)
 ```
 
 We can extract rows that fulfill some condition by using the `filter` function. 
 This is useful when we want to select a subpopulation, or to exclude outliers, etc.
-For example, we can examine 
+For example, we can examine only the data from first-born children.
 ```{r}
-filter(df, cut == "Premium")
+filter(admins_eng_ws, birth_order == "First")
 ```
 
 We can construct new variables using the `mutate` function, perhaps to compute a derived value.
-For example, we might want to split up the diamonds into weight classes.
+For example, we might want to split up the ages into age bins.
 ```{r}
-mutate(df, weight_class = cut(carat, c(0, 1, 2, 3, 4, 5)))
+mutate(admins_eng_ws, age_bin = cut(age, c(12, 18, 24, 30, 36)))
 ```
 
 We can also find a summary of the data at the level of some grouping variable (e.g., participant, age groups, sex).
 To do this, we can use `group_by` to define the groups, and `summarise` to *apply a function* to each group separately.
-For example, we can group the diamonds by their cut, and find the mean price for each group, as well as the number of diamonds in each group.
+For example, we can group the children by their age, and find the mean production for each group, as well as the number of children of each age.
 ```{r}
-df |> 
-  group_by(cut) |> 
-  summarise(mean_price = mean(price),
+admins_eng_ws |> 
+  group_by(age) |> 
+  summarise(mean_production = mean(production),
             n = n())
 ```
 
@@ -71,10 +72,10 @@ This works because almost all verbs in the `tidyverse` take in a dataframe as th
 ## Visualisation
 Visualisation in the `tidyverse` is handled by `ggplot2` (short for "grammar of graphics").
 We use the function `ggplot` to initialise a plot, and various `geom`s to construct and display data on the plot.
-For example, we may want to show the relationship between weight (in carat) and price, plotting both individual points (for each diamond) as well as a trendline.
+For example, we may want to show the relationship between age and production, plotting both individual points (for each child) as well as a trendline.
 ```{r}
-ggplot(data = diamonds,
-       mapping = aes(x = carat, y = price)) +
+ggplot(data = admins_eng_ws,
+       mapping = aes(x = age, y = production)) +
   geom_point(alpha = .1) +
   geom_smooth()
 ```
