@@ -1,0 +1,276 @@
+---
+title: "Exploring Wordbank"
+author: "Alvin Tan"
+date: "2023-10-17"
+output: html_document
+---
+
+In this session, we will explore the data in Wordbank and what we can do with them. 
+To retrieve data, you will need the `wordbankr` package, and we will also be using the `tidyverse` package for data wrangling purposes. 
+
+```{r install, eval=F}
+# run this only once to install wordbankr and tidyverse
+install.packages("wordbankr")
+install.packages("tidyverse")
+```
+
+```{r setup}
+library(wordbankr)
+library(tidyverse)
+```
+
+# `tidyverse` refresher
+I will assume that you already have some familiarity with R, but just as a quick refresher, we will go through a few of the key aspects of the `tidyverse` that we will use.
+The best reference for this material is Hadley Wickham's [R for Data Scientists](http://r4ds.had.co.nz/) and I encourage you to read it if you are interested in learning more. 
+
+## Tidy data
+The basic data structure we're working with is the dataframe (or `tibble` in the `tidyverse` implementation).
+Dataframes have rows and columns, and each column has a particular data type. 
+For a dataframe to be **tidy**, every row must record a single **observation**, while every column must describe a single **variable**, such that each cell is a single **value**.
+
+> “Tidy datasets are all alike, but every messy dataset is messy in its own way.” –– Hadley Wickham
+
+This consistency allows us to adopt a uniform approach to handling the data, and to make use of powerful tools that R and the `tidyverse` contain.
+
+## Data wrangling
+Once we have tidy data, we can manipulate them using some of the functions in the `tidyverse`.
+Just to illustrate some of these functions (or "verbs"), we will use the `diamonds` dataset from `tidyverse`, which contains the details and prices of over 50,000 diamonds.
+```{r}
+df <- diamonds
+head(df)
+```
+
+We can extract rows that fulfill some condition by using the `filter` function. 
+This is useful when we want to select a subpopulation, or to exclude outliers, etc.
+For example, we can examine 
+```{r}
+filter(df, cut == "Premium")
+```
+
+We can construct new variables using the `mutate` function, perhaps to compute a derived value.
+For example, we might want to split up the diamonds into weight classes.
+```{r}
+mutate(df, weight_class = cut(carat, c(0, 1, 2, 3, 4, 5)))
+```
+
+We can also find a summary of the data at the level of some grouping variable (e.g., participant, age groups, sex).
+To do this, we can use `group_by` to define the groups, and `summarise` to *apply a function* to each group separately.
+For example, we can group the diamonds by their cut, and find the mean price for each group, as well as the number of diamonds in each group.
+```{r}
+df |> 
+  group_by(cut) |> 
+  summarise(mean_price = mean(price),
+            n = n())
+```
+
+Notice here that we've also used the pipe, `|>` (or `%>%`).
+What this does is put the left-hand value into the first argument of the right-hand function.
+This allows us to chain functions together easily---first applying the `group_by`, then the `summarise`.
+This works because almost all verbs in the `tidyverse` take in a dataframe as their first argument, and return another dataframe, so you can pipe them together easily.
+
+## Visualisation
+Visualisation in the `tidyverse` is handled by `ggplot2` (short for "grammar of graphics").
+We use the function `ggplot` to initialise a plot, and various `geom`s to construct and display data on the plot.
+For example, we may want to show the relationship between weight (in carat) and price, plotting both individual points (for each diamond) as well as a trendline.
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = carat, y = price)) +
+  geom_point(alpha = .1) +
+  geom_smooth()
+```
+
+# What's in `wordbankr`?
+Now we turn our attention to Wordbank proper, via the `wordbankr` package.
+The first thing we can do is look into what is available in the package. 
+```{r}
+ls("package:wordbankr")
+```
+In practice, most of the functions in `wordbankr` simply function to retrieve data from the database, table by table. 
+All of these functions have names like `get_X_data` where `X` is the name of the relevant table. 
+
+Let's take a look at the `instruments` table that tells us about the different CDI variants in Wordbank. 
+```{r}
+instruments <- get_instruments()
+instruments
+```
+Here you can see all the different languages and instruments. That can help us figure out which data we can get. 
+
+The next main data types we might want from Wordbank are `administration_data` and `instrument_data`. 
+Administration data reflect individual instances in which a form was filled out for a particular child (each row is one administration).
+Instrument data reflect responses for every item on the form, so it is much bigger (each row is one item of one administration).
+
+Let's pull in the data from the English (American) Words & Sentences form.
+```{r}
+admins_eng_ws <- get_administration_data(language = "English (American)", 
+                                         form = "WS", 
+                                         include_demographic_info = TRUE)
+head(admins_eng_ws)
+n_distinct(admins_eng_ws$data_id)
+```
+
+We can look at the distribution across ages using the `count` verb:
+```{r}
+admins_eng_ws |> 
+  count(age)
+```
+
+**EXERCISE:** Try choosing another instrument in a different language and pulling data from it, then examining the age distribution.
+```{r}
+# your code here:
+
+```
+
+# Visualising Wordbank data
+Now we can make our canonical plot of the variability of individual children's vocabularies. 
+Note that we are using `geom_jitter`, which jitters points around so they don't all end up on top of one another. 
+The arguments to the function (`alpha` and `size`) make the points smaller and semi-transparent, so they all can be seen on one plot. 
+```{r}
+ggplot(admins_eng_ws, aes(x = age, y = production)) +
+  geom_jitter(alpha = .1, width = .3, height = 0) +
+  # geom_point(alpha = .1) +
+  geom_smooth() +
+  labs(x = "Age (months)",
+       y = "Number of words produced")
+```
+
+**EXERCISE:** One way to understand the data is by summarising and visualising.
+Group the data by age and sex, then get the mean production values by group.
+Plot the result! 
+```{r}
+# your code here:
+
+```
+
+# Digging into item-level data
+The exciting part of Wordbank is that you can dig into kids' data for individual words! 
+The list of words for each instrument is stored in the `item_data` table, and the responses for each item for each kid (the "rawest" form of the data) is stored in the `instrument_data` table. 
+
+We'll start by looking at the English items. 
+```{r}
+items_eng_ws <- get_item_data(language = "English (American)", form = "WS")
+head(items_eng_ws)
+```
+
+Note that there are different kinds of items on CDI forms. 
+There's the word list, but there are also items about how children use words, verbal and nominal morphology, word combination (whether children are combining), and items on morphosyntactic complexity of utterances. 
+```{r}
+items_eng_ws |> distinct(item_kind)
+```
+
+What's more, within the words, there are a whole bunch of different categories of word (marked this way on the form to make it easier for parents to think about different words). 
+```{r}
+items_eng_ws |> 
+  filter(item_kind == "word") |> 
+  distinct(category)
+```
+
+There are also some "protosyntactic" categories, created following Bates et al. (1994), who further grouped the categories above into nouns, predicates (verbs and adjectives), function words, and others. 
+```{r}
+items_eng_ws |> 
+  filter(item_kind == "word") |> 
+  distinct(lexical_category)
+```
+
+Note that all of this sectioning is specific to the English forms. 
+Most other forms follow most of these decisions, but there are many significant deviations from them based on what various form developers wanted at the time and/or felt was appropriate for their language. 
+
+# Getting raw instrument data
+OK, we are now ready to get raw instrument data. 
+
+The main issue with doing this is that the raw data are very large, so we might not want to pull every item. 
+Let's try selecting the items "dog" and "cat"!
+```{r}
+dog_cat_items <- items_eng_ws |> 
+  filter(item_definition %in% c("dog", "cat"))
+
+dog_cat_data <- get_instrument_data(language = "English (American)", 
+                                    form = "WS", 
+                                    items = dog_cat_items$item_id, 
+                                    item_info = TRUE)
+head(dog_cat_data)
+```
+
+Notice that the demographic information isn't present in the instrument data.
+That's because we would be repeating the same data a lot of times---hundreds of times for each administration! 
+Doing this would take up a lot of space, so instead we only store the demographic data in the administration data.
+
+We can put the demographic data back in by doing a join.
+Joins allow you to combine two dataframes by matching values across them.
+In this case, the column `data_id` is present both in the administration data and in the instrument data. 
+The values in this column uniquely identify the administrations, so we can use it to add the data from the administrations dataframe into the item-wise data.
+We'll use a left join, which allows us to take a target dataframe `x` and add all matching information from `y`.
+```{r}
+dog_cat_data |> 
+  left_join(admins_eng_ws) |> 
+  head()
+```
+
+Now we can aggregate and plot these data. 
+Check out this slightly more complex pipe chain where we do a join, and then a group, and then a summarise!
+```{r}
+dog_cat_data |>
+  left_join(admins_eng_ws) |>
+  filter(!is.na(sex)) |>
+  group_by(age, sex, item_definition) |>
+  summarise(produces = mean(produces, na.rm=TRUE)) ->
+  dog_cat_means 
+
+ggplot(dog_cat_means, aes(x = age, y = produces, col = sex)) +
+  geom_point() + 
+  geom_smooth() +
+  facet_wrap(~item_definition)
+```
+
+# Replicating Bates & Goodman (1997)
+Now we have everything we need to replicate Bates and Goodman's observed correlation between grammar and the lexicon. 
+
+First, get the complexity items. 
+```{r}
+complexity_items <- filter(items_eng_ws, item_kind == "complexity") 
+head(complexity_items)
+```
+
+Next get the instrument data for these specific items (note that we are using `item_id` to select only the complexity items), for all children. 
+This is a lot of data! 
+```{r}
+complexity_instrument_data <- get_instrument_data(language = "English (American)", 
+                                                  form = "WS", 
+                                                  items = complexity_items$item_id)
+head(complexity_instrument_data)                                          
+```
+
+For each item, parents checked whether the child's response was more like the `simple` or `complex` model sentence. 
+
+**EXERCISE:** Average the complexity data for each individual so that you have one number (`complexity_score`) for each child, with that number indicating the number of items on which the parent indicated `complex`. 
+
+Hint: try using `sum(value == "complex")` to add them up. 
+
+Hint: `data_id` indicates a unique child.
+```{r}
+# your code here:
+```
+
+**EXERCISE:** now join `complexity_means` and `admins_eng_ws` to create a single dataframe.
+```{r}
+# complete this command:
+# admins_eng_ws <- left_join(...)
+```
+
+Now we can plot the relationship described by Bates and Goodman!
+```{r}
+ggplot(admins_eng_ws, 
+       aes(x = production, y = complexity_score)) + 
+  geom_jitter(alpha = .1, size = .5, width = 0, height = .3) + 
+  geom_smooth()
+```
+
+We can even quantify the strength of this relationship statistically!
+```{r}
+cor.test(admins_eng_ws$production, admins_eng_ws$complexity_score)
+```
+
+# Challenge problem
+If you had no trouble doing the prior two exercises, try making the same figure as above, but this time compare to the total productive PREDICATE vocabulary, instead of the TOTAL vocabulary. 
+
+To do this, you will need to pull the instrument data for predicates and create the same kind of child-level score dataframe you did for complexity, with a variable called `predicate_score`. Let's see what you get!
+
