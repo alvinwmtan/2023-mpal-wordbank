@@ -69,6 +69,12 @@ What this does is put the left-hand value into the first argument of the right-h
 This allows us to chain functions together easily---first applying the `group_by`, then the `summarise`.
 This works because almost all verbs in the `tidyverse` take in a dataframe as their first argument, and return another dataframe, so you can pipe them together easily.
 
+**EXERCISE:** Group the data by both age and sex, then calculate the mean production for each group.
+```{r}
+# your code here:
+
+```
+
 ## Visualisation
 Visualisation in the `tidyverse` is handled by `ggplot2` (short for "grammar of graphics").
 We use the function `ggplot` to initialise a plot, and various `geom`s to construct and display data on the plot.
@@ -137,6 +143,8 @@ ggplot(admins_eng_ws, aes(x = age, y = production)) +
 **EXERCISE:** One way to understand the data is by summarising and visualising.
 Group the data by age and sex, then get the mean production values by group.
 Plot the result! 
+
+Hint: you can reuse your code from a previous exercise.
 ```{r}
 # your code here:
 
@@ -270,8 +278,15 @@ We can even quantify the strength of this relationship statistically!
 cor.test(admins_eng_ws$production, admins_eng_ws$complexity_score)
 ```
 
-# Challenge problem
+# Going beyond
+## Challenge problem
 If you had no trouble doing the prior two exercises, try making the same figure as above, but this time compare to the total productive PREDICATE vocabulary, instead of the TOTAL vocabulary. 
 
-To do this, you will need to pull the instrument data for predicates and create the same kind of child-level score dataframe you did for complexity, with a variable called `predicate_score`. Let's see what you get!
+To do this, you will need to pull the instrument data for predicates and create the same kind of child-level score dataframe you did for complexity, with a variable called `predicate_score`. 
+Let's see what you get!
 
+## Your ideas here
+Now that you have a bit more familiarity with Wordbank, think about some potential questions you could ask with the data.
+What new analyses can you run? 
+How might you link this with the other language development research you're working on?
+Wordbank has a wealth of data in an accessible and standardised format, and I'd encourage you to do some exploration in your own time!
