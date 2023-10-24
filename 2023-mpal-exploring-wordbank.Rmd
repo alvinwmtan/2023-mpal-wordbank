@@ -290,3 +290,8 @@ Now that you have a bit more familiarity with Wordbank, think about some potenti
 What new analyses can you run? 
 How might you link this with the other language development research you're working on?
 Wordbank has a wealth of data in an accessible and standardised format, and I'd encourage you to do some exploration in your own time!
+
+## Contribute to Wordbank
+If you use the CDIs in your research, and would like to support open science, we'd love for you to contribute your CDI data to Wordbank!
+We're always open to contributions---all you need is the item-level data and any demographics you might have, as well as a citation for the dataset. 
+Chat with us or shoot us an email to find out how you can contribute! 
